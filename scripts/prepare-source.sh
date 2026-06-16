@@ -19,6 +19,12 @@ fi
 
 cp "${ROOT_DIR}/configs/r3g.seed" "${SRC_DIR}/.config"
 
+if [ -d "${ROOT_DIR}/files" ]; then
+  echo "Adding R3G default runtime files"
+  mkdir -p "${SRC_DIR}/files"
+  cp -a "${ROOT_DIR}/files/." "${SRC_DIR}/files/"
+fi
+
 append_feed_once() {
   local feed_line="$1"
   local feed_name

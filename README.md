@@ -39,6 +39,23 @@ Build output path:
 openwrt/bin/targets/ramips/mt7621
 ```
 
+## Default Settings
+
+The build injects `files/etc/uci-defaults/99-r3g-defaults` into the firmware.
+On first boot it applies:
+
+- LAN IP: `192.168.10.1`
+- root password: `admin`
+- timezone: `Asia/Shanghai`
+- LuCI language: `auto`
+- Wi-Fi SSID: `R3G`
+- Wi-Fi password: `1234567890`
+- Wi-Fi country: `CN`
+- 2.4 GHz width: `HT40`
+- 5 GHz width: `VHT80`
+- IPv6 behind an upstream CPE: RA/DHCPv6/NDP relay enabled, with `wan6` using
+  DHCPv6 address try and no prefix request.
+
 ## Local Build
 
 From the repository root:

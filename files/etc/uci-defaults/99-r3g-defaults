@@ -1,0 +1,82 @@
+#!/bin/sh
+
+logger -t r3g-defaults "Set default timezone and NTP servers"
+uci -q set system.@system[0].zonename='Asia/Shanghai'
+uci -q set system.@system[0].timezone='CST-8'
+uci -q get system.ntp >/dev/null 2>&1 || uci -q set system.ntp='timeserver'
+uci -q set system.ntp.enabled='1'
+uci -q delete system.ntp.server
+uci -q add_list system.ntp.server='ntp.aliyun.com'
+uci -q add_list system.ntp.server='cn.pool.ntp.org'
+uci -q add_list system.ntp.server='time1.cloud.tencent.com'
+uci -q add_list system.ntp.server='time.ustc.edu.cn'
+uci -q commit system
+
+if [ -f /etc/config/luci ]; then
+	uci -q get luci.main >/dev/null 2>&1 || uci -q set luci.main='core'
+	uci -q set luci.main.lang='auto'
+	uci -q commit luci
+fi
+
+logger -t r3g-defaults "Set default LAN address"
+uci -q set network.lan.proto='static'
+uci -q set network.lan.ipaddr='192.168.10.1'
+uci -q set network.lan.netmask='255.255.255.0'
+
+logger -t r3g-defaults "Set WAN6 for IPv6 relay behind upstream CPE"
+uci -q set network.wan6='interface'
+uci -q set network.wan6.proto='dhcpv6'
+uci -q set network.wan6.device='@wan'
+uci -q set network.wan6.reqaddress='try'
+uci -q set network.wan6.reqprefix='no'
+uci -q commit network
+
+logger -t r3g-defaults "Enable IPv6 RA/DHCPv6/NDP relay"
+uci -q set dhcp.lan.ra='relay'
+uci -q set dhcp.lan.dhcpv6='relay'
+uci -q set dhcp.lan.ndp='relay'
+uci -q set dhcp.wan='dhcp'
+uci -q set dhcp.wan.interface='wan'
+uci -q set dhcp.wan.ignore='1'
+uci -q set dhcp.wan.ra='relay'
+uci -q set dhcp.wan.dhcpv6='relay'
+uci -q set dhcp.wan.ndp='relay'
+uci -q set dhcp.wan.master='1'
+uci -q commit dhcp
+
+logger -t r3g-defaults "Set default root password"
+if command -v chpasswd >/dev/null 2>&1; then
+	echo 'root:admin' | chpasswd
+else
+	(printf 'admin\nadmin\n' | passwd root) >/dev/null 2>&1 || true
+fi
+
+logger -t r3g-defaults "Set default WiFi SSID and password"
+if ! uci -q show wireless | grep -q '=wifi-iface'; then
+	wifi config >/dev/null 2>&1 || true
+fi
+
+for radio in $(uci -q show wireless | sed -n 's/^\(wireless\.[^.]*\)=wifi-device$/\1/p'); do
+	band="$(uci -q get "${radio}.band")"
+	uci -q set "${radio}.country=CN"
+	uci -q set "${radio}.disabled=0"
+	case "${band}" in
+		2g)
+			uci -q set "${radio}.htmode=HT40"
+			;;
+		5g)
+			uci -q set "${radio}.htmode=VHT80"
+			;;
+	esac
+done
+
+for section in $(uci -q show wireless | sed -n 's/^\(wireless\.[^.]*\)=wifi-iface$/\1/p'); do
+	uci -q set "${section}.ssid=R3G"
+	uci -q set "${section}.encryption=sae-mixed"
+	uci -q set "${section}.key=1234567890"
+	uci -q set "${section}.ieee80211w=1"
+	uci -q set "${section}.disabled=0"
+done
+uci -q commit wireless
+
+exit 0
