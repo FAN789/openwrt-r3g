@@ -74,13 +74,14 @@ jobs:
         run: |
           cleanup_small_package_feed() {
             rm -rf \
+              small-package-feed/webd \
               feeds/small_package.tmp \
               feeds/small_package.index \
               feeds/small_package.targetindex \
               feeds/small_package/webd
 
-            if grep -q 'PKG_NAME:=vmlinux-btf' feeds/small_package/Makefile 2>/dev/null; then
-              rm -f feeds/small_package/Makefile
+            if grep -q 'PKG_NAME:=vmlinux-btf' small-package-feed/Makefile 2>/dev/null; then
+              rm -f small-package-feed/Makefile
             fi
           }
 
@@ -100,10 +101,10 @@ jobs:
           done
 
           if [ -n "${small_package_line}" ]; then
-            rm -rf feeds/small_package
-            git clone --depth=1 https://github.com/kenzok8/small-package.git feeds/small_package
+            rm -rf feeds/small_package small-package-feed
+            git clone --depth=1 https://github.com/kenzok8/small-package.git small-package-feed
             cleanup_small_package_feed
-            printf '%s\n' "src-link small_package ./feeds/small_package" >> feeds.conf.default
+            printf '%s\n' "src-link small_package ../small-package-feed" >> feeds.conf.default
             ./scripts/feeds update small_package
 
             if [ ! -s feeds/small_package.tmp/.packageinfo ]; then
