@@ -71,7 +71,19 @@ jobs:
 
       - name: Update feeds
         working-directory: openwrt
-        run: ./scripts/feeds update -a
+        run: |
+          for attempt in 1 2 3; do
+            if ./scripts/feeds update -a; then
+              break
+            fi
+
+            echo "Feed update failed; removing known broken, unused small_package entries before retry: ${attempt}/3"
+            rm -rf feeds/small_package/webd feeds/small_package/vmlinux-btf
+            if [ "${attempt}" = "3" ]; then
+              echo "Feed update retry failed."
+              exit 1
+            fi
+          done
 
       - name: Install feeds
         env:
