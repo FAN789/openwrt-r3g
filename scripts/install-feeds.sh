@@ -12,6 +12,11 @@ fi
 
 cd "${SRC_DIR}"
 
+if [ "${INCLUDE_PASSWALL}" = "true" ] && [ ! -s "feeds/small_package.tmp/.packageinfo" ]; then
+  echo "small_package feed index is missing; run feeds update successfully before installing PassWall."
+  exit 1
+fi
+
 feed_names() {
   awk '/^src-[a-z]+[[:space:]]+/ { print $2 }' feeds.conf.default
 }
