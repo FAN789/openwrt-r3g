@@ -84,23 +84,32 @@ jobs:
             fi
           }
 
+          small_package_line="$(grep -E '^src-git[[:space:]]+small_package[[:space:]]+' feeds.conf.default || true)"
+          sed -i '/^src-git[[:space:]]\+small_package[[:space:]]/d' feeds.conf.default
+
           for attempt in 1 2 3; do
-            cleanup_small_package_feed
             if ./scripts/feeds update -a; then
               break
             fi
 
-            echo "Feed update failed; removing known broken, unused small_package entries before retry: ${attempt}/3"
-            cleanup_small_package_feed
+            echo "Official feed update failed; retrying: ${attempt}/3"
             if [ "${attempt}" = "3" ]; then
               echo "Feed update retry failed."
               exit 1
             fi
           done
 
-          if [ ! -s feeds/small_package.tmp/.packageinfo ]; then
-            echo "small_package feed index was not generated."
-            exit 1
+          if [ -n "${small_package_line}" ]; then
+            rm -rf feeds/small_package
+            git clone --depth=1 https://github.com/kenzok8/small-package.git feeds/small_package
+            cleanup_small_package_feed
+            printf '%s\n' "src-link small_package ./feeds/small_package" >> feeds.conf.default
+            ./scripts/feeds update small_package
+
+            if [ ! -s feeds/small_package.tmp/.packageinfo ]; then
+              echo "small_package feed index was not generated."
+              exit 1
+            fi
           fi
 
       - name: Install feeds
