@@ -48,8 +48,13 @@ if [ "${INCLUDE_PASSWALL}" = "true" ]; then
     luci-app-passwall \
     chinadns-ng \
     dns2socks \
+    geoview \
     ipt2socks \
     microsocks \
+    shadowsocksr-libev \
+    simple-obfs \
+    sing-box \
+    xray-core \
     tcping
 fi
 
